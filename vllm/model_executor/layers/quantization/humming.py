@@ -813,8 +813,11 @@ class HummingMoEMethod(FusedMoEMethodBase):
                     param = torch.nn.Parameter(tensor, requires_grad=False)
                     setattr(layer, name, param)
 
-                layer.weight_schemas[sublayer_name] = weight_schema
-                layer.input_schemas[sublayer_name] = input_schema
+                # Alireza: Models which already have Humming format would skip this part so we should do the allocations outside the if:
+                # layer.weight_schemas[sublayer_name] = weight_schema
+                # layer.input_schemas[sublayer_name] = input_schema
+            layer.weight_schemas[sublayer_name] = weight_schema #Added by Alireza
+            layer.input_schemas[sublayer_name] = input_schema #Added by Alireza
 
             # force requant (origin quant setting -> fp16/bf16 -> new_quant setting)
             assert isinstance(weight_schema, HummingWeightSchema)
@@ -868,6 +871,8 @@ class HummingMoEMethod(FusedMoEMethodBase):
 
         # use moe modular
         experts: HummingIndexedExperts | HummingGroupedExperts
+        # Alireza: We never called self.get_fused_moe_quant_config(layer) so the following assert will fail.
+        self.get_fused_moe_quant_config(layer) #Added by Alireza
         assert self.moe_quant_config is not None
         if get_humming_moe_gemm_type() == "indexed":
             experts = HummingIndexedExperts(layer, self.moe, self.moe_quant_config)
